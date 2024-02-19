@@ -1,0 +1,97 @@
+---
+title: "DATA607-PROJECT1"
+author: "Biyag Dukuray"
+output: html_document
+date: "2024-02-14"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Project 1 instructions
+
+In this project, you’re given a text file with chess tournament results where the information has some structure. Your
+job is to create an R Markdown file that generates a .CSV file (that could for example be imported into a SQL database)
+with the following information for all of the players:
+Player’s Name, Player’s State, Total Number of Points, Player’s Pre-Rating, and Average Pre Chess Rating of Opponents
+For the first player, the information would be:
+Gary Hua, ON, 6.0, 1794, 1605
+1605 was calculated by using the pre-tournament opponents’ ratings of 1436, 1563, 1600, 1610, 1649, 1663, 1716, and
+dividing by the total number of games played.
+If you have questions about the meaning of the data or the results, please post them on the discussion forum. Data
+science, like chess, is a game of back and forth…
+The chess rating system (invented by a Minnesota statistician named Arpad Elo) has been used in many other contexts,
+including assessing relative strength of employment candidates by human resource departments.
+You may substitute another text file (or set of text files, or data scraped from web pages) of similar or greater
+complexity, and create your own assignment and solution. You may work in a small team. All of your code should be in
+an R markdown file (and published to rpubs.com); with your data accessible for the person running the script.
+
+## We will being by loading the Libraries needed to complete the task at hand.
+
+```{r}
+library(tidyverse)
+library(readr)
+library(stringr)
+library(jsonlite)
+
+```
+
+
+We will be begin by loading the dataset into a data frame that we will call chess_data
+
+```{r cars}
+
+github_raw <- "https://github.com/Zcash95/DATA607-Project1/blob/main/tournamentinfo.txt"
+
+chess_data <- read.delim(github_raw, header = TRUE, sep = "|", fill = TRUE)
+
+head(chess_data)
+```
+
+## Clean the data 
+
+This data appeared in a format which was unstructured so we had to do some work to structure it properly (which took alot of brain power lol). This will give us the ability to analyze it accurately. Data that is unstructured is alot harder to work with so we started by identifying that we need to parse this data as it is JSON format. This is the process of extracting valuable information from data. 
+
+```{r}
+
+chess_data2 <- readLines(github_raw)
+
+parsed_data <- fromJSON(chess_data2)
+```
+
+The next step in this process was extracting the relevant information from this text file and filtering out the irrelevant 
+
+```{r}
+rawLines <- parsed_data$payload$blob$rawLines
+
+relevant_lines <- rawLines[grep("^\\s*\\d+\\s+\\|", rawLines)]
+```
+
+We will now create a new data frame "chessdf" by taking the relevant information and enter into a new data frame.
+
+```{r}
+chessdf <- read.table(text = relevant_lines, header = FALSE, sep = "|", strip.white = TRUE)
+```
+
+We will then label the column names so we can refer back to the header to know what information we are looking at. 
+
+```{r}
+colnames(chessdf) <- c("Pair", "PlayerName", "Total", "Round1", "Round2", "Round3", "Round4", "Round5", "Round6", "Round7")
+
+head(chessdf)
+```
+We will visualize the data frame. The next step will be calculating the Pre averages of opponents for all the players.
+
+```{r}
+view(chessdf)
+```
+
+
+We will now export the TXT file inro a CSV file from the data table that we have created.
+
+```{r}
+write.csv(chessdf, "chess_results.csv", row.names = FALSE)
+```
+
+
